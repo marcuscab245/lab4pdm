@@ -27,8 +27,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,42 +39,61 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.lab4pdm.ui.theme.Lab4pdmTheme
 import com.example.lab4pdm.model.Task
 import com.example.lab4pdm.components.TaskCard
+import com.example.lab4pdm.viewmodel.GeneralViewModel
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             Lab4pdmTheme {
-                Greeting()
+                MainNavigation()
             }
+        }
+    }
+}
+
+@Composable
+fun MainNavigation() {
+    val navController = rememberNavController()
+    val viewModel: GeneralViewModel = viewModel()
+
+    NavHost(navController = navController, startDestination = "task_screen") {
+        composable("task_screen") {
+            TaskScreen(viewModel = viewModel)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Greeting() {
+fun TaskScreen(viewModel: GeneralViewModel) {
     var showDialog by remember { mutableStateOf(false) }
-    // Aquí mantenemos la lista local por ahora, como dice tu plantilla original
-    val taskList = remember { mutableStateListOf<Task>() }
+
+    val taskList by viewModel.tasks.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Tasks list") })
+            TopAppBar(title = { Text("Mis Tareas Pendientes") })
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
+                Icon(Icons.Default.Add, contentDescription = "Añadir tarea")
             }
         }
     ) { paddingValues ->
+
         LazyColumn(modifier = Modifier.padding(paddingValues)) {
             items(taskList) { task ->
                 TaskCard(task)
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
@@ -87,7 +106,7 @@ fun Greeting() {
                         title = newTitle,
                         description = newDescription
                     )
-                    taskList.add(newTask)
+                    viewModel.addTask(newTask)
                     showDialog = false
                 }
             )
@@ -113,14 +132,16 @@ fun CreateTask(
         Column(
             modifier = Modifier
                 .wrapContentSize()
-                .background(Color.Black),
+                .background(MaterialTheme.colorScheme.background)
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = "Nueva Tarea",
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             OutlinedTextField(
@@ -142,10 +163,14 @@ fun CreateTask(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
-                modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Button(onClick = { onDismiss() }) {
-                    Text(text = "Cerrar")
+                Button(
+                    onClick = { onDismiss() },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text(text = "Cancelar")
                 }
 
                 Button(
@@ -156,17 +181,9 @@ fun CreateTask(
                     },
                     enabled = title.isNotBlank()
                 ) {
-                    Text("Crear")
+                    Text("Guardar")
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Lab4pdmTheme {
-        Greeting()
     }
 }
