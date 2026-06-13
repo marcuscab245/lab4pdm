@@ -102,7 +102,6 @@ fun TaskScreen(viewModel: GeneralViewModel) {
                 onDismiss = { showDialog = false },
                 onTaskCreated = { newTitle, newDescription ->
                     val newTask = Task(
-                        id = taskList.size + 1,
                         title = newTitle,
                         description = newDescription
                     )
